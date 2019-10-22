@@ -1,52 +1,9 @@
 import React from 'react';
-import {
-  Dimensions,
-  SafeAreaView,
-  SectionList,
-  StyleSheet,
-  Text,
-  View,
-  Animated,
-} from 'react-native';
+import {Animated, SafeAreaView, SectionList, Text, View} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
-const DATA = [
-  {
-    title: 'Main dishes',
-    data: [
-      'Pizza',
-      'Burger',
-      'Risotto',
-      'Pizza',
-      'Burger',
-      'Risotto',
-      'Pizza',
-      'Burger',
-      'Risotto',
-    ],
-  },
-  {
-    title: 'Sides',
-    data: [
-      'Burger',
-      'Risotto',
-      'Pizza',
-      'Burger',
-      'Risotto',
-      'French Fries',
-      'Onion Rings',
-      'Fried Shrimps',
-    ],
-  },
-  {
-    title: 'Drinks',
-    data: ['Water', 'Coke', 'Beer'],
-  },
-  {
-    title: 'Desserts',
-    data: ['Cheese Cake', 'Ice Cream'],
-  },
-];
+import DATA from './App.data';
+import styles, {HEADER_H, ITEM_H, SEPARATOR_H} from './App.styles';
 
 function Item({title}) {
   return (
@@ -62,9 +19,9 @@ const props = {
   end: {x: 0, y: 1},
 };
 
-const {width, height} = Dimensions.get('window');
+const keyExtractor = (item, index) => item + index;
 
-export default class App extends React.Component {
+class App extends React.Component {
   scrollY = new Animated.Value(0);
 
   getSectionOffsetTop(sectionIndex) {
@@ -85,48 +42,50 @@ export default class App extends React.Component {
     };
   }
 
+  renderSectionHeader = ({section}) => {
+    const {title} = section;
+    const index = DATA.indexOf(section);
+    const y = this.scrollY.interpolate(this.getConfig(index));
+
+    const animStyle = {
+      transform: [
+        {
+          translateY: y,
+        },
+      ],
+    };
+    return (
+      <View style={styles.headerRoot}>
+        <Animated.View style={[styles.headerBg, animStyle]}>
+          <LinearGradient {...props} style={{flex: 1}} />
+        </Animated.View>
+        <Text style={styles.header}>{title}</Text>
+      </View>
+    );
+  };
+
+  onScroll = Animated.event([
+    {nativeEvent: {contentOffset: {y: this.scrollY}}},
+  ]);
+
+  renderItem = ({item}) => <Item title={item} />;
+
+  ItemSeparatorComponent = () => <View style={styles.separatorRoot} />;
+
   render() {
     return (
       <>
-        <LinearGradient {...props} style={{flex: 1}}>
-          <SafeAreaView style={styles.container}>
+        <LinearGradient {...props} style={styles.root}>
+          <SafeAreaView style={styles.root}>
             <SectionList
-              sections={DATA}
               stickySectionHeadersEnabled
-              onScroll={Animated.event([
-                {nativeEvent: {contentOffset: {y: this.scrollY}}},
-              ])}
-              keyExtractor={(item, index) => item + index}
-              renderItem={({item}) => <Item title={item} />}
-              renderSectionHeader={({section}) => {
-                const {title} = section;
-                const index = DATA.indexOf(section);
-                const y = this.scrollY.interpolate(this.getConfig(index));
-
-                const animStyle = {
-                  transform: [
-                    {
-                      translateY: y,
-                    },
-                  ],
-                };
-                return (
-                  <View
-                    style={styles.headerRoot}
-                    onLayout={({nativeEvent: {...r}}) => {
-                      // console.log(' --- index', index, r);
-                    }}>
-                    <Animated.View style={[styles.headerBg, animStyle]}>
-                      <LinearGradient {...props} style={{flex: 1}} />
-                    </Animated.View>
-                    <Text style={styles.header}>{title}</Text>
-                  </View>
-                );
-              }}
-              ItemSeparatorComponent={() => (
-                <View style={{height: SEPARATOR_H}} />
-              )}
+              sections={DATA}
+              onScroll={this.onScroll}
+              keyExtractor={keyExtractor}
+              renderItem={this.renderItem}
               contentContainerStyle={styles.scrollView}
+              renderSectionHeader={this.renderSectionHeader}
+              ItemSeparatorComponent={this.ItemSeparatorComponent}
             />
           </SafeAreaView>
         </LinearGradient>
@@ -135,45 +94,4 @@ export default class App extends React.Component {
   }
 }
 
-const HEADER_H = 60;
-const SEPARATOR_H = 16;
-const ITEM_H = 50;
-const M_H = 20;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    marginHorizontal: M_H,
-  },
-  item: {
-    backgroundColor: '#f9c2ffaa',
-    height: ITEM_H,
-  },
-  header: {
-    position: 'relative',
-    fontSize: 32,
-  },
-  headerRoot: {
-    position: 'relative',
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: HEADER_H,
-  },
-  headerBg: {
-    backgroundColor: 'red',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height,
-    // opacity: 0.5,
-    // borderWidth: 1,
-    // borderColor: 'black',
-  },
-  title: {
-    fontSize: 24,
-  },
-});
+export default App;
