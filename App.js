@@ -3,7 +3,7 @@ import {Animated, SafeAreaView, SectionList, Text, View} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
 import DATA from './App.data';
-import styles, {HEADER_H, ITEM_H, SEPARATOR_H} from './App.styles';
+import styles from './App.styles';
 
 function Item({title}) {
   return (
@@ -21,63 +21,48 @@ const props = {
 
 const keyExtractor = (item, index) => item + index;
 
+const AnimatedSectionList = Animated.createAnimatedComponent(SectionList);
+
 class App extends React.Component {
   scrollY = new Animated.Value(0);
 
-  getSectionOffsetTop(sectionIndex) {
-    return DATA.slice(0, sectionIndex).reduce((acc, section) => {
-      const contItems = section.data.length;
-      const sectionHeight =
-        contItems * ITEM_H + (contItems - 1) * SEPARATOR_H + HEADER_H;
-
-      return acc + sectionHeight;
-    }, 0);
-  }
-
-  getConfig(index) {
-    return {
-      inputRange: [0, this.getSectionOffsetTop(index)],
-      outputRange: [-this.getSectionOffsetTop(index), 0],
-      extrapolate: 'clamp',
-    };
-  }
-
   renderSectionHeader = ({section}) => {
     const {title} = section;
-    const index = DATA.indexOf(section);
-    const y = this.scrollY.interpolate(this.getConfig(index));
 
-    const animStyle = {
-      transform: [
-        {
-          translateY: y,
-        },
-      ],
-    };
     return (
       <View style={styles.headerRoot}>
-        <Animated.View style={[styles.headerBg, animStyle]}>
-          <LinearGradient {...props} style={{flex: 1}} />
-        </Animated.View>
         <Text style={styles.header}>{title}</Text>
       </View>
     );
   };
 
-  onScroll = Animated.event([
-    {nativeEvent: {contentOffset: {y: this.scrollY}}},
-  ]);
+  onScroll = Animated.event(
+    [{nativeEvent: {contentOffset: {y: this.scrollY}}}],
+    {useNativeDriver: true},
+  );
 
   renderItem = ({item}) => <Item title={item} />;
 
   ItemSeparatorComponent = () => <View style={styles.separatorRoot} />;
+
+  ListHeaderComponent = () => {
+    const animStyle = {
+      transform: [{translateY: this.scrollY}],
+    };
+
+    return (
+      <Animated.View style={[styles.bgRoot, animStyle]}>
+        <LinearGradient {...props} style={styles.grRoot} />
+      </Animated.View>
+    );
+  };
 
   render() {
     return (
       <>
         <LinearGradient {...props} style={styles.root}>
           <SafeAreaView style={styles.root}>
-            <SectionList
+            <AnimatedSectionList
               stickySectionHeadersEnabled
               sections={DATA}
               onScroll={this.onScroll}
@@ -86,6 +71,8 @@ class App extends React.Component {
               contentContainerStyle={styles.scrollView}
               renderSectionHeader={this.renderSectionHeader}
               ItemSeparatorComponent={this.ItemSeparatorComponent}
+              ListFooterComponent={this.ListHeaderComponent}
+              ListFooterComponentStyle={styles.footerComponentStyle}
             />
           </SafeAreaView>
         </LinearGradient>
